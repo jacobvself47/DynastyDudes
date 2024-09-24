@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dynasty Dudes</title>
+  <style>
+    table {
+      border-collapse: collapse;
+      width: 80%;
+      margin: 20px auto;
+      border: 2px solid #000;
+    }
+    table th, table td {
+      padding: 10px;
+      text-align: center;
+      border: 1px solid #000;
+    }
+  </style>
+</head>
+<body>
+  <h1>Dynasty Dudes Efficiency Metrics</h1>
+  <table id="roster-table" class="sortable">
+    <thead>
+      <tr>
+        <th>Roster Name</th>
+        <th>Actual Points</th>
+        <th>Max Points</th>
+        <th>Efficiency</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Results will be displayed in this table -->
+    </tbody>
+  </table>
+  <script src="sorttable.js"></script>
+  <script>
+    // A mapping of roster names based on roster ID
+    const rosterNames = {
+      1: "Jake/Vinny",
+      2: "Ian",
+      3: "AShapiro",
+      4: "Macpitts",
+      5: "alux0130",
+      6: "JeffGuzman",
+      7: "THarchut",
+      8: "Buky",
+      9: "nicks951",
+      10: "WHOOOOPASS",
+    };
+
+    // Function to fetch rosters and ppts/ppts_decimal from the Sleeper API
+    function fetchRosters() {
+      fetch('https://api.sleeper.app/v1/league/1064256025387245568/rosters')
+        .then(response => response.json())
+        .then(data => {
+          const table = document.querySelector('table tbody');
+
+          data.forEach(roster => {
+            if (roster.settings && roster.settings.ppts !== undefined && roster.settings.ppts_decimal !== undefined
+                && roster.settings.fpts !== undefined && roster.settings.fpts_decimal !== undefined) {
+              const ppts = roster.settings.ppts;
+              const ppts_decimal = roster.settings.ppts_decimal;
+              const fpts = roster.settings.fpts;
+              const fpts_decimal = roster.settings.fpts_decimal;
+              const combinedActual = combineFpts(fpts, fpts_decimal);
+              const combinedMax = combinePpts(ppts, ppts_decimal);
+              const percentage = calculatePercentage(combinedActual, combinedMax);
+              const rosterName = getRosterName(roster.roster_id);
+              
+              // Create a new row for each roster
+              const row = table.insertRow();
+              row.insertCell(0).textContent = rosterName;
+              row.insertCell(1).textContent = combinedActual;
+              row.insertCell(2).textContent = combinedMax;
+              row.insertCell(3).textContent = percentage + "%";
+            }
+          });
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    }
+
+    // Function to combine ppts and ppts_decimal
+    function combinePpts(ppts, ppts_decimal) {
+      const combinedMaxString = `${ppts}.${ppts_decimal}`;
+      const combinedMaxNumber = parseFloat(combinedMaxString);
+      return combinedMaxNumber;
+    }
+
+    // Function to combine fpts and fpts_decimal
+    function combineFpts(fpts, fpts_decimal) {
+      const combinedActualString = `${fpts}.${fpts_decimal}`;
+      const combinedActualNumber = parseFloat(combinedActualString);
+      return combinedActualNumber;
+    }
+
+    // Function to calculate the percentage
+    function calculatePercentage(numerator, denominator) {
+      if (denominator === 0) {
+        return "Undefined";
+      }
+      const percentage = (numerator / denominator) * 100;
+      return percentage.toFixed(2); // Limit to 2 decimal places
+    }
+
+    // Function to get roster name based on roster ID
+    function getRosterName(rosterId) {
+      return rosterNames[rosterId] || `Roster ${rosterId}`;
+    }
+
+    // Call the fetchRosters function when the page loads
+    window.onload = fetchRosters;
+  </script>
+</body>
+</html>
